@@ -54,7 +54,12 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           chmod +x "$WRAPPER"
+          
       
+      - name: Enable AndroidX
+        run: |
+          printf 'android.useAndroidX=true\n' >> "$PROJECT_DIR/gradle.properties"
+
     
   
       - name: Build debug APK
