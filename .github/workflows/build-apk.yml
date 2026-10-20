@@ -56,15 +56,42 @@ jobs:
           chmod +x "$WRAPPER"
       
     
+  
       - name: Build debug APK
         shell: bash
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          sed -i 's/^DEFAULT_JVM_OPTS=.*/DEFAULT_JVM_OPTS="-Xmx64m -Xms64m"/' gradlew
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("gradlew")
+          s = p.read_text()
+
+          s = re.sub(
+              r'^DEFAULT_JVM_OPTS=.*$',
+              'DEFAULT_JVM_OPTS="-Xmx64m -Xms64m"',
+              s,
+              flags=re.MULTILINE
+          )
+
+          s = re.sub(
+              r'^exec "\$JAVACMD".*$',
+              'exec "$JAVACMD" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"',
+              s,
+              flags=re.MULTILINE
+          )
+
+          if 'org.gradle.wrapper.GradleWrapperMain' not in s:
+              raise SystemExit("Could not repair Gradle launcher")
+
+          p.write_text(s)
+          PY
           chmod +x gradlew
           ./gradlew --version
           ./gradlew --no-daemon assembleDebug
+
 
 
       - name: Upload APK
