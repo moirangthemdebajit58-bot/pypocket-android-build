@@ -23,7 +23,13 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install required Android packages
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
       - name: Extract project ZIP
         shell: bash
