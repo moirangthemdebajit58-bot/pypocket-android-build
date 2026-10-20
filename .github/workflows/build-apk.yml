@@ -56,9 +56,49 @@ jobs:
           chmod +x "$WRAPPER"
           
       
-      - name: Enable AndroidX
+      - name: Prepare Android build
+        shell: bash
         run: |
-          printf 'android.useAndroidX=true\n' >> "$PROJECT_DIR/gradle.properties"
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("extracted")
+          props = root / "gradle.properties"
+          text = props.read_text() if props.exists() else ""
+
+          settings = {
+              "android.useAndroidX": "true",
+              "org.gradle.jvmargs": "-Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+              "org.gradle.workers.max": "2",
+          }
+
+          lines = [line for line in text.splitlines()
+                   if not any(line.strip().startswith(k + "=") for k in settings)]
+          lines += [f"{k}={v}" for k, v in settings.items()]
+          props.write_text("\n".join(lines) + "\n")
+
+          files = list(root.glob("app/src/main/java/**/EditorScreen.kt"))
+          if not files:
+              raise SystemExit("EditorScreen.kt not found")
+
+          for p in files:
+              source = p.read_text()
+              if "FontWeight" in source and \
+                 "import androidx.compose.ui.text.font.FontWeight" not in source:
+                  lines = source.splitlines()
+                  index = next((i for i, line in enumerate(lines)
+                                if line.startswith("package ")), None)
+                  if index is None:
+                      raise SystemExit(f"Package declaration not found in {p}")
+                  lines.insert(index + 1, "")
+                  lines.insert(index + 2,
+                               "import androidx.compose.ui.text.font.FontWeight")
+                  p.write_text("\n".join(lines) + "\n")
+                  print(f"Added FontWeight import to {p}")
+          PY
+
+      
 
     
   
