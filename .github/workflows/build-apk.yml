@@ -54,13 +54,16 @@ jobs:
           fi
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           chmod +x "$WRAPPER"
-
+      
       - name: Build debug APK
         shell: bash
         run: |
           set -euo pipefail
+          unset JAVA_OPTS
+          unset GRADLE_OPTS
           cd "$PROJECT_DIR"
           ./gradlew --no-daemon assembleDebug
+
 
       - name: Upload APK
         if: success()
