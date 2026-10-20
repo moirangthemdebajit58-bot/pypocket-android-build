@@ -55,13 +55,15 @@ jobs:
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           chmod +x "$WRAPPER"
       
+    
       - name: Build debug APK
         shell: bash
         run: |
           set -euo pipefail
-          unset JAVA_OPTS
-          unset GRADLE_OPTS
           cd "$PROJECT_DIR"
+          sed -i 's/^DEFAULT_JVM_OPTS=.*/DEFAULT_JVM_OPTS="-Xmx64m -Xms64m"/' gradlew
+          chmod +x gradlew
+          ./gradlew --version
           ./gradlew --no-daemon assembleDebug
 
 
